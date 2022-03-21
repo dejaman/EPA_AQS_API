@@ -2,7 +2,7 @@
 Author: Deven Aman
 Date: 3/13/2022
 
-Description: functions for accesssing the EPA AQS data from their API
+Description: functions for accessing the EPA AQS data from their API
 documentation:  https://aqs.epa.gov/aqsweb/documents/data_api.html#meta
 
 codes: https://www.epa.gov/aqs/aqs-code-list
@@ -259,7 +259,7 @@ Optional variables not accounted for in these functions: cbdate, cedate and dura
 '''
 ###############################################################################################
 
-def bySite(param,bdate,edate,state,county,site):
+def samp_bySite(param,bdate,edate,state,county,site):
     sc=state_code(state)
     cc=county_code(state,county)
 
@@ -267,16 +267,20 @@ def bySite(param,bdate,edate,state,county,site):
     url="https://aqs.epa.gov/data/api/"+endpoint+"?email="+email+"&key="+key+'&param='+param+'&bdate='+bdate+'&edate='+edate+'&state='+sc+'&county='+cc+'&site='+site
     response=requests.get(url).json()
 
+    if response['Header'][0]['status']=='Failed':
+        print('pull request failed')
+        return None
+    
     return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
 
 
 #test call
 #Example: returns all ozone data for the Millbrook School site (#0014) in Wake County, NC for June 18, 2017:
-#d = bySite(param='44201',bdate='20170618',edate='20170618',state='North Carolina',county='Wake',site='0014') 
+#d = samp_bySite(param='44201',bdate='20170618',edate='20170618',state='North Carolina',county='Wake',site='0014') 
 #print(d)
 #expected result: https://aqs.epa.gov/data/api/sampleData/bySite?email=test@aqs.api&key=test&param=44201&bdate=20170618&edate=20170618&state=37&county=183&site=0014
 
-def byCounty(param,bdate,edate,state,county):
+def samp_byCounty(param,bdate,edate,state,county):
     sc=state_code(state) #fetch state code for given county
     cc=county_code(state,county) #fetch county code for given county
 
@@ -284,35 +288,150 @@ def byCounty(param,bdate,edate,state,county):
     url="https://aqs.epa.gov/data/api/"+endpoint+"?email="+email+"&key="+key+'&param='+param+'&bdate='+bdate+'&edate='+edate+'&state='+sc+'&county='+cc
     response=requests.get(url).json()
 
+    if response['Header'][0]['status']=='Failed':
+        print('pull request failed')
+        return None
+    
     return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
 
 #test call
 #example: returns all FRM/FEM PM2.5 data for Wake County, NC between January and February 2016:
-#d = byCounty(param='88101',bdate='20160101',edate='20160228',state='North Carolina',county='Wake') 
+#d = samp_byCounty(param='88101',bdate='20160101',edate='20160228',state='North Carolina',county='Wake') 
 #print(d)
 #expected result: https://aqs.epa.gov/data/api/sampleData/byCounty?email=test@aqs.api&key=test&param=88101&bdate=20160101&edate=20160228&state=37&county=183
 
 
-def byState(param,bdate,edate,state):
+def samp_byState(param,bdate,edate,state):
     sc=state_code(state)
 
     endpoint='sampleData/byState'
     url="https://aqs.epa.gov/data/api/"+endpoint+"?email="+email+"&key="+key+'&param='+param+'&bdate='+bdate+'&edate='+edate+'&state='+sc
     response=requests.get(url).json()
     
+    if response['Header'][0]['status']=='Failed':
+        print('pull request failed')
+        return None
+    
     return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
 
 #test call
 #Example: returns all benzene samples from North Carolina collected on May 15th, 1995:
-#d = byState(param='45201',bdate='19950515',edate='19950515',state='North Carolina') 
+#d = samp_byState(param='45201',bdate='19950515',edate='19950515',state='North Carolina') 
 #print(d)
 #expected result: https://aqs.epa.gov/data/api/sampleData/byState?email=test@aqs.api&key=test&param=45201&bdate=19950515&edate=19950515&state=37
 
 
-
-def byBox(param,bdate,edate, minlat, maxlat, minlon, maxlon):
+'''
+#The test for this isnt working for some reason, the pull request fails. may have something to do with the min/max lats/lons being a weird type?
+def samp_byBox(param,bdate,edate, minlat, maxlat, minlon, maxlon):
 
     endpoint='sampleData/byState'
+    url="https://aqs.epa.gov/data/api/"+endpoint+"?email="+email+"&key="+key+'&param='+param+'&bdate='+bdate+'&edate='+edate+'&minlat='+str(minlat)+'&maxlat='+str(maxlat)+'&minlon='+str(minlon)+'&maxlon='+str(maxlon)
+    response=requests.get(url).json()
+
+    if response['Header'][0]['status']=='Failed':
+        print('pull request failed')
+        return None
+    
+    return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
+
+#test call
+#Example: returns all ozone samples in the vicinity of central Alabama for the first two days in May, 2015:
+d = samp_byBox(param='44201',bdate='20150501',edate='20150502',minlat=33.3,maxlat=33.6,minlon=-87.0,maxlon=-86.7) 
+print(d)
+#expected result: https://aqs.epa.gov/data/api/sampleData/byBox?email=test@aqs.api&key=test&param=44201&bdate=20150501&edate=20150502&minlat=33.3&maxlat=33.6&minlon=-87.0&maxlon=-86.7
+'''
+
+
+
+
+
+
+
+
+###############################################################################################
+'''
+Monitors
+
+Returns operational information about the samplers (monitors) used to collect the data. 
+Includes identifying information, operational dates, operating organizations, etc.
+
+
+'''
+###############################################################################################
+
+
+
+def mon_bySite(param,bdate,edate,state,county,site):
+    sc=state_code(state)
+    cc=county_code(state,county)
+
+    endpoint='monitors/bySite'
+    url="https://aqs.epa.gov/data/api/"+endpoint+"?email="+email+"&key="+key+'&param='+param+'&bdate='+bdate+'&edate='+edate+'&state='+sc+'&county='+cc+'&site='+site
+    response=requests.get(url).json()
+
+    if response['Header'][0]['status']=='Failed':
+        print('pull request failed')
+        return None
+    
+    return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
+
+
+#test call
+#Example: returns list of SO2 monitors at the Hawaii Volcanoes NP site (#0007) in Hawaii County, HI that were operating on May 01, 2015. 
+#(Note, all monitors that operated between the bdate and edate will be returned):
+#d = mon_bySite(param='42401',bdate='20150501',edate='20150502',state='Hawaii',county='Hawaii',site='0007') 
+#print(d)
+#expected result: https://aqs.epa.gov/data/api/monitors/bySite?email=test@aqs.api&key=test&param=42401&bdate=20150501&edate=20150502&state=15&county=001&site=0007
+
+
+def mon_byCounty(param,bdate,edate,state,county):
+    sc=state_code(state) #fetch state code for given county
+    cc=county_code(state,county) #fetch county code for given county
+
+    endpoint='monitors/byCounty'
+    url="https://aqs.epa.gov/data/api/"+endpoint+"?email="+email+"&key="+key+'&param='+param+'&bdate='+bdate+'&edate='+edate+'&state='+sc+'&county='+cc
+    response=requests.get(url).json()
+
+    if response['Header'][0]['status']=='Failed':
+        print('pull request failed')
+        return None
+    
+    return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
+
+#test call
+#example:  returns all SO2 monitors in Hawaii County, HI that were operating on May 01, 2015:
+#d = mon_byCounty(param='42401',bdate='20150501',edate='20150502',state='Hawaii',county='Hawaii') 
+#print(d)
+#expected result: https://aqs.epa.gov/data/api/monitors/byCounty?email=test@aqs.api&key=test&param=42401&bdate=20150501&edate=20150502&state=15&county=001
+
+
+def mon_byState(param,bdate,edate,state):
+    sc=state_code(state)
+
+    endpoint='monitors/byState'
+    url="https://aqs.epa.gov/data/api/"+endpoint+"?email="+email+"&key="+key+'&param='+param+'&bdate='+bdate+'&edate='+edate+'&state='+sc
+    response=requests.get(url).json()
+    
+    if response['Header'][0]['status']=='Failed':
+        print('pull request failed')
+        return None
+    
+    return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
+
+#test call
+#Example: returns SO2 monitors in Hawaii that were operating on May 01, 2015:
+#d = mon_byState(param='42401',bdate='20150501',edate='20150502',state='Hawaii') 
+#print(d)
+#expected result: https://aqs.epa.gov/data/api/monitors/byState?email=test@aqs.api&key=test&param=42401&bdate=20150501&edate=20150502&state=15
+
+
+'''
+#The test for this isnt working for some reason, the pull request fails, may have something to do with the min/max lats/lons being a weird type?
+
+def mon_byBox(param,bdate,edate, minlat, maxlat, minlon, maxlon):
+
+    endpoint='monitors/byState'
     url="https://aqs.epa.gov/data/api/"+endpoint+"?email="+email+"&key="+key+'&param='+param+'&bdate='+bdate+'&edate='+edate+'&minlat='+str(minlat)+'&maxlat='+str(maxlat)+'&minlon='+str(minlon)+'&maxlon='+str(maxlon)
     response=requests.get(url).json()
     print(url)
@@ -320,8 +439,8 @@ def byBox(param,bdate,edate, minlat, maxlat, minlon, maxlon):
     return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
 
 #test call
-#Example: returns all ozone samples in the vicinity of central Alabama for the first two days in May, 2015:
-#d = byBox(param='44201',bdate='20150501',edate='20150502',minlat=33.3,maxlat=33.6,minlon=-87.0,maxlon=-86.7) 
-#print(d)
-#THIS ONE ISNT WORKING:(
-#expected result: https://aqs.epa.gov/data/api/sampleData/byBox?email=test@aqs.api&key=test&param=44201&bdate=20150501&edate=20150502&minlat=33.3&maxlat=33.6&minlon=-87.0&maxlon=-86.7
+#Example: returns all ozone monitors in the vicinity of central Alabama that operated in 1995
+d = mon_byBox(param='44201',bdate='19950101',edate='19951231',minlat=33.3,maxlat=33.6,minlon=-87.0,maxlon=-86.7) 
+print(d)
+#expected result: https://aqs.epa.gov/data/api/monitors/byBox?email=test@aqs.api&key=test&param=44201&bdate=19950101&edate=19951231&minlat=33.3&maxlat=33.6&minlon=-87.0&maxlon=-86.7
+'''
