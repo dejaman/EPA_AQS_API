@@ -6,6 +6,12 @@ Description: functions for accessing the EPA AQS data from their API
 documentation:  https://aqs.epa.gov/aqsweb/documents/data_api.html#meta
 
 codes: https://www.epa.gov/aqs/aqs-code-list
+
+
+show data from this day: https://twitter.com/stanierlab/status/1471342543455588354
+
+
+ONLY 1 YEAR OF DATA IS PERMITTED TO PULL AT A TIME
 '''
 
 
@@ -246,7 +252,39 @@ def parametersByClass(pc):
 
 
 
+###############################################################################################
+'''
+Monitors
 
+Returns operational information about the samplers (monitors) used to collect the data. 
+Includes identifying information, operational dates, operating organizations, etc.
+
+Optional variables not accounted for in these functions: cbdate, cedate and duration. See variables used in service requests to see if these are something you need.
+'''
+###############################################################################################
+
+
+
+
+def mon_byState(param,bdate,edate,state):
+    sc=state_code(state)
+
+    endpoint='monitors/byState'
+    url="https://aqs.epa.gov/data/api/"+endpoint+"?email="+email+"&key="+key+'&param='+param+'&bdate='+bdate+'&edate='+edate+'&state='+sc
+    response=requests.get(url).json()
+    
+    if response['Header'][0]['status']=='Failed':
+        print('pull request failed')
+        print('error: ',response['Header'][0]['error'])
+        return None
+    
+    return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
+
+#test call
+#Example: returns all benzene samples from North Carolina collected on May 15th, 1995:
+#d = mon_byState(param='42401',bdate='20150501',edate='20150502',state='Hawaii') 
+#print(d)
+#expected result: https://aqs.epa.gov/data/api/monitors/byState?email=test@aqs.api&key=test&param=42401&bdate=20150501&edate=20150502&state=15
 
 
 ###############################################################################################
@@ -260,15 +298,16 @@ Optional variables not accounted for in these functions: cbdate, cedate and dura
 ###############################################################################################
 
 def samp_bySite(param,bdate,edate,state,county,site):
-    sc=state_code(state)
-    cc=county_code(state,county)
+    sc=state_code(state) #get state code
+    cc=county_code(state,county) #get country code
 
-    endpoint='sampleData/bySite'
+    endpoint='sampleData/bySite' 
     url="https://aqs.epa.gov/data/api/"+endpoint+"?email="+email+"&key="+key+'&param='+param+'&bdate='+bdate+'&edate='+edate+'&state='+sc+'&county='+cc+'&site='+site
-    response=requests.get(url).json()
+    response=requests.get(url).json() #get request using url with my account email & password and the parameters for the data I want
 
-    if response['Header'][0]['status']=='Failed':
+    if response['Header'][0]['status']=='Failed': #prints error message (if a pull request fails)
         print('pull request failed')
+        print('error: ',response['Header'][0]['error'])
         return None
     
     return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
@@ -276,7 +315,7 @@ def samp_bySite(param,bdate,edate,state,county,site):
 
 #test call
 #Example: returns all ozone data for the Millbrook School site (#0014) in Wake County, NC for June 18, 2017:
-#d = samp_bySite(param='44201',bdate='20170618',edate='20170618',state='North Carolina',county='Wake',site='0014') 
+#data = samp_bySite(param='44201',bdate='20170618',edate='20170618',state='North Carolina',county='Wake',site='0014') 
 #print(d)
 #expected result: https://aqs.epa.gov/data/api/sampleData/bySite?email=test@aqs.api&key=test&param=44201&bdate=20170618&edate=20170618&state=37&county=183&site=0014
 
@@ -290,6 +329,7 @@ def samp_byCounty(param,bdate,edate,state,county):
 
     if response['Header'][0]['status']=='Failed':
         print('pull request failed')
+        print('error: ',response['Header'][0]['error'])
         return None
     
     return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
@@ -310,6 +350,7 @@ def samp_byState(param,bdate,edate,state):
     
     if response['Header'][0]['status']=='Failed':
         print('pull request failed')
+        print('error: ',response['Header'][0]['error'])
         return None
     
     return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
@@ -331,6 +372,7 @@ def samp_byBox(param,bdate,edate, minlat, maxlat, minlon, maxlon):
 
     if response['Header'][0]['status']=='Failed':
         print('pull request failed')
+        print('error: ',response['Header'][0]['error'])
         return None
     
     return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
@@ -372,6 +414,7 @@ def mon_bySite(param,bdate,edate,state,county,site):
 
     if response['Header'][0]['status']=='Failed':
         print('pull request failed')
+        print('error: ',response['Header'][0]['error'])
         return None
     
     return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
@@ -395,6 +438,7 @@ def mon_byCounty(param,bdate,edate,state,county):
 
     if response['Header'][0]['status']=='Failed':
         print('pull request failed')
+        print('error: ',response['Header'][0]['error'])
         return None
     
     return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
@@ -415,6 +459,7 @@ def mon_byState(param,bdate,edate,state):
     
     if response['Header'][0]['status']=='Failed':
         print('pull request failed')
+        print('error: ',response['Header'][0]['error'])
         return None
     
     return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
@@ -435,6 +480,11 @@ def mon_byBox(param,bdate,edate, minlat, maxlat, minlon, maxlon):
     url="https://aqs.epa.gov/data/api/"+endpoint+"?email="+email+"&key="+key+'&param='+param+'&bdate='+bdate+'&edate='+edate+'&minlat='+str(minlat)+'&maxlat='+str(maxlat)+'&minlon='+str(minlon)+'&maxlon='+str(maxlon)
     response=requests.get(url).json()
     print(url)
+        
+    if response['Header'][0]['status']=='Failed':
+        print('pull request failed')
+        print('error: ',response['Header'][0]['error'])
+        return None
     
     return pd.DataFrame.from_dict(response['Data']) #returns data as pandas dataframe
 
